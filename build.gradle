@@ -13,16 +13,25 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
-jar {
-    doFirst {
-        manifest {
-            if (!configurations.compile.isEmpty()) {
-                attributes(
-                        'Class-Path': configurations.compile.collect{it.toURI().toString()}.join(' '),
-                        'Main-Class': 'org.example.Main')
-            }
-        }
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    classifier = 'all'
+    from {
+        // change here: runtimeClasspath instead of runtime
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude "META-INF/.SF"
+        exclude "META-INF/.DSA"
+        exclude "META-INF/*.RSA"
     }
+    with jar
+}
+jar {
+        manifest {
+                attributes(
+                        'Class-Path': configurations.runtimeClasspath.files.collect{it.getName()}.join(' '),
+                        'Main-Class': 'org.example.Main')
+        }
 }
 
 test {
